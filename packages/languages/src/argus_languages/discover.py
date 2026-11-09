@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from argus_languages.ai_agent import AI_CONFIG_FILES
+
 SKIP_DIRS = {
     "node_modules", ".git", "dist", "build", ".next", "coverage", "vendor",
     "__pycache__", "target", "bin", "obj", ".venv", "venv", ".terraform",
@@ -119,6 +121,14 @@ def classify_file(path: Path, root: Path, content: str) -> LanguageId | None:
     rel = path.relative_to(root).as_posix()
     name = path.name.lower()
 
+    parent = path.parent.name.lower()
+    if parent in AI_CONFIG_FILES and name in AI_CONFIG_FILES[parent]:
+        if parent == ".claude":
+            return "claude-settings"
+        if parent == ".devcontainer":
+            return "devcontainer"
+        return "vscode-tasks" if name == "tasks.json" else "vscode-settings"
+
     if _is_generated_dart(name):
         return None
 
@@ -137,6 +147,8 @@ def classify_file(path: Path, root: Path, content: str) -> LanguageId | None:
         return "blade"
     if name == "composer.json":
         return "composer"
+    if name == "package.json":
+        return "npm-manifest"
 
     if name == "dockerfile" or name.endswith(".dockerfile"):
         return "docker"
@@ -169,6 +181,8 @@ def discover_files(target: Path) -> list[ScannedFile]:
     out: list[ScannedFile] = []
 
     def should_skip_dir(entry: Path, name: str) -> bool:
+        if name in AI_CONFIG_FILES:
+            return False
         if name in SKIP_DIRS:
             return True
         if name == ".github":
@@ -190,6 +204,9 @@ def discover_files(target: Path) -> list[ScannedFile]:
         for entry in entries:
             # Do not follow project symlinks: they can escape the scan root or
             # create cycles, and relative-path reporting assumes files stay inside it.
+            if (directory.name in AI_CONFIG_FILES
+                    and entry.name not in AI_CONFIG_FILES[directory.name]):
+                continue
             if entry.is_symlink():
                 continue
             if should_skip_dir(entry, entry.name):
@@ -228,6 +245,7 @@ def discover_files(target: Path) -> list[ScannedFile]:
 
 SUPPORTED_LANGUAGES = sorted(
     set(EXT_MAP.values())
+    | {"claude-settings", "vscode-settings", "vscode-tasks", "devcontainer", "npm-manifest"}
     | {
         "terraform",
         "ansible",

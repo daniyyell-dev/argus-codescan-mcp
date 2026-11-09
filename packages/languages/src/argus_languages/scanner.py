@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from argus_languages.ai_agent import AI_CONFIG_LANGUAGES, scan_ai_agent_config
 from argus_languages.discover import SUPPORTED_LANGUAGES, discover_files
 from argus_languages.models import Finding, ScanResult
 from argus_languages.noise import IgnoreMarker, downgrade, parse_ignore, path_context
@@ -54,7 +55,7 @@ def _skip_line(line: str, language: str) -> bool:
 
 # Config files only get rules written for them; generic code rules would
 # misfire on JSON and KEY=value lines.
-CONFIG_LANGUAGES = frozenset(
+CONFIG_LANGUAGES = AI_CONFIG_LANGUAGES | frozenset(
     {"composer", "dotenv-production", "dotenv-example", "spring-config", "github-actions"}
 )
 
@@ -158,6 +159,10 @@ def scan_path(target: str | Path, rules: list[LoadedRule] | None = None) -> Scan
             continue
         result.findings.extend(
             _scan_content(scanned.relative, scanned.language, content, loaded, suppressed)
+        )
+
+        result.findings.extend(
+            scan_ai_agent_config(scanned.relative, scanned.language, content, loaded)
         )
 
     result.metadata["files_scanned"] = len(files)

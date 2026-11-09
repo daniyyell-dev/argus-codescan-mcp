@@ -1,0 +1,62 @@
+# Config rules consume parsed fields in ai_agent.py; these patterns are semantic markers.
+- id: ai-agent-automatic-hook
+  title: Agent hook runs automatically at session start or before tool use
+  severity: low
+  pattern: automatic-hook
+  languages: [ai-agent-source]
+  fix_guidance: Review repository hooks before trusting or opening the project.
+
+- id: ai-agent-hook-network-command
+  title: Agent hook downloads, decodes or contacts a network destination
+  severity: high
+  pattern: hook-network
+  languages: [ai-agent-source]
+  fix_guidance: Remove untrusted network or encoded commands from agent hooks.
+
+- id: ai-agent-broad-permissions
+  title: Agent configuration broadly permits shell or web access
+  severity: medium
+  pattern: broad-permissions
+  languages: [ai-agent-source]
+  fix_guidance: Restrict permissions to specific commands and trusted destinations.
+
+- id: ai-agent-auto-approve
+  title: Agent tool approval is disabled in workspace settings
+  severity: medium
+  pattern: auto-approve
+  languages: [ai-agent-source]
+  fix_guidance: Require interactive tool approval for untrusted workspaces.
+
+- id: ai-agent-automatic-tasks
+  title: Workspace settings allow tasks to run automatically
+  severity: medium
+  pattern: automatic-tasks
+  languages: [ai-agent-source]
+  fix_guidance: Review automatic tasks and disable automatic execution where unnecessary.
+
+- id: ai-agent-folder-open-task
+  title: Workspace task runs when the project folder opens
+  severity: medium
+  pattern: folder-open
+  languages: [ai-agent-source]
+  fix_guidance: Review the task before opening the repository in a trusted workspace.
+
+- id: ai-agent-task-remote-exec
+  title: Workspace task pipes a network download into a shell
+  severity: high
+  pattern: task-remote-exec
+  languages: [ai-agent-source]
+  fix_guidance: Download and verify scripts before executing them.
+
+- id: ai-agent-container-remote-exec
+  title: Development container startup pipes a network download into a shell
+  severity: high
+  pattern: container-remote-exec
+  languages: [ai-agent-source]
+  fix_guidance: Replace mutable downloaded startup scripts with reviewed pinned dependencies.
+
+- id: ai-agent-bypass-approvals
+  title: Agent command bypasses tool approvals or sandbox protection
+  severity: high
+  pattern: '\b(?:claude\s+[^\r\n]*--dangerously-skip-permissions|gemini\s+[^\r\n]*--yolo|q\s+chat\s+[^\r\n]*--trust-all-tools|codex\s+[^\r\n]*--dangerously-bypass-approvals-and-sandbox)\b'
+  fix_guidance: Run agents with interactive approvals and sandbox protection enabled.

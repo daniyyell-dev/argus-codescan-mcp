@@ -22,6 +22,7 @@ from pydantic import AnyUrl
 from argus.cloud_upload import ScanTimer, upload_scan_report
 from argus.models import AggregatedReport
 from argus.resources import RESOURCE_DEFINITIONS, read_resource_json
+from argus.tools.ai import run_ai_scan
 from argus.tools.ansible import (
     run_all_ansible,
     run_ansible_lint,
@@ -440,6 +441,42 @@ async def list_tools() -> list[types.Tool]:
             },
         ),
         types.Tool(
+            name="scan_ai",
+            description=(
+                "Inspect project AI agent hooks, broad permissions, automatic workspace tasks "
+                "and approval-bypass flags. Built-in static checks; no commands are executed."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "target": {
+                        "type": "string",
+                        "description": "Path to project directory or file",
+                    },
+                    "format": {
+                        "type": "string",
+                        "enum": ["markdown", "json", "sarif"],
+                        "description": "Output format (default: markdown)",
+                        "default": "markdown",
+                    },
+                    "timeout": {
+                        "type": "integer",
+                        "description": "Reserved for future external AI configuration scanners (default: 300)",
+                        "default": 300,
+                    },
+                    "fail_on": {
+                        "type": "string",
+                        "enum": ["critical", "high", "medium", "low", "never"],
+                        "description": (
+                            "Severity threshold that marks the cloud-uploaded scan as failed "
+                            "(default: ARGUS_FAIL_ON env var, else 'high')"
+                        ),
+                    },
+                },
+                "required": ["target"],
+            },
+        ),
+        types.Tool(
             name="scan_pci",
             description=(
                 "Scan source for PCI-DSS cardholder-data exposure heuristics: CVV/CVC stored "
@@ -760,6 +797,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextCont
             return await _handle_scan_ansible(arguments)
         elif name == "scan_ml":
             return await _handle_scan_ml(arguments)
+        elif name == "scan_ai":
+            return await _handle_scan_ai(arguments)
         elif name == "scan_malware":
             return await _handle_scan_malware(arguments)
         elif name == "scan_pci":
@@ -1095,6 +1134,24 @@ async def _handle_scan_malware(args: dict[str, Any]) -> list[types.TextContent]:
     return await _finish_scan(
         report,
         scan_type="malware",
+        timer=timer,
+        fmt=fmt,
+        fail_on=args.get("fail_on"),
+        include_raw_json=True,
+        target_path=target,
+    )
+
+
+async def _handle_scan_ai(args: dict[str, Any]) -> list[types.TextContent]:
+    timer = ScanTimer()
+    target = args["target"]
+    fmt = args.get("format", "markdown")
+
+    result = await run_ai_scan(target)
+    report = AggregatedReport(target=target, results=[result])
+    return await _finish_scan(
+        report,
+        scan_type="ai",
         timer=timer,
         fmt=fmt,
         fail_on=args.get("fail_on"),

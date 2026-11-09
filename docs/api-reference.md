@@ -531,3 +531,7 @@ argus ci pr-comment \
 `.github/workflows/argus-sarif.yml` posts it as the `github-actions` bot and edits the same comment on each push (it finds the `<!-- argus-pr-comment -->` marker). The job needs `pull-requests: write`. Set the repository variable `ARGUS_DASHBOARD_URL` to add the dashboard link. Pull requests from forks get a read-only token, so for them the comment appears only in the job summary.
 
 See [features roadmap](features-roadmap.md) for `.argus.yml` policy and baseline diff workflows.
+
+## `scan_ai`
+
+Inspect project agent hooks, permissions, workspace tasks and approval-bypass flags without executing configuration. Parameters: `target` (required path), `format` (`markdown`, `json`, `sarif`), `timeout` (reserved), and `fail_on` (standard severity threshold). See [agent configuration checks](ai-agent-config.md).

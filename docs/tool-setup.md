@@ -297,3 +297,7 @@ You'll see a table like:
 | `bandit` | SAST (Python) | ✅ Installed | — |
 | `trivy` | SCA / IaC / Container | ✅ Installed | — |
 | `gitleaks` | Secret Scanning | ❌ Not installed | `brew install gitleaks` |
+
+## Project agent configuration (built-in)
+
+`argus scan ai PATH` requires no external scanner. See [agent configuration checks](ai-agent-config.md) for supported files and severity policy.

@@ -89,6 +89,7 @@ Connect Cursor, VS Code, Claude Desktop, JetBrains, Windsurf, or any MCP-compati
 | `scan_terraform` | Deep Terraform scan (tfsec, tflint, validate, KICS) |
 | `scan_ansible` | Ansible playbook & role security scan |
 | `scan_ml` | AI/ML & LLM pipeline security (model load, API keys, prompts) |
+| `scan_ai` | Project agent hooks, broad permissions, automatic tasks and approval bypasses |
 | `scan_malware` | Malware / backdoor / crypto-miner / malicious BAT-PS1 heuristics |
 | `scan_pci` | PCI-DSS cardholder-data heuristics (CVV storage, PANs in logs, http:// card data) |
 | `scan_container` | Container image CVE scanning |

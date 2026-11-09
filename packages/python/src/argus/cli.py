@@ -196,6 +196,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common(malware_p)
 
+    ai_p = scan_sub.add_parser("ai", help="Inspect AI agent hooks, permissions and startup settings")
+    _add_common(ai_p)
+
     pci_p = scan_sub.add_parser(
         "pci",
         help="PCI-DSS cardholder-data heuristics — CVV storage, PANs in logs, http:// card data (built-in)",
@@ -646,6 +649,11 @@ async def _dispatch_scan(
         from argus.tools.malware import run_malware_scan
 
         return [await run_malware_scan(target)]
+
+    if scan_type == "ai":
+        from argus.tools.ai import run_ai_scan
+
+        return [await run_ai_scan(target)]
 
     if scan_type == "pci":
         from argus.tools.pci import run_pci_scan
