@@ -38,6 +38,7 @@ from argus.tools.iac import (
     run_trivy_image,
 )
 from argus.tools.malware import run_malware_scan
+from argus.tools.mcp_config import run_mcp_config_scan
 from argus.tools.ml import run_ml_scan
 from argus.tools.pci import run_pci_scan
 from argus.tools.review import review_summary_lines, run_review
@@ -440,6 +441,46 @@ async def list_tools() -> list[types.Tool]:
             },
         ),
         types.Tool(
+            name="scan_mcp_config",
+            description=(
+                "Review MCP server package pins, shell downloads, credentials, endpoints "
+                "and lookalike names without executing servers. Global configs are opt-in."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "target": {
+                        "type": "string",
+                        "description": "Path to project directory or file",
+                    },
+                    "format": {
+                        "type": "string",
+                        "enum": ["markdown", "json", "sarif"],
+                        "description": "Output format (default: markdown)",
+                        "default": "markdown",
+                    },
+                    "timeout": {
+                        "type": "integer",
+                        "description": "Reserved for future external MCP configuration scanners (default: 300)",
+                        "default": 300,
+                    },
+                    "include_global": {
+                        "type": "boolean", "default": False,
+                        "description": "Also inspect known user-level client configuration files",
+                    },
+                    "fail_on": {
+                        "type": "string",
+                        "enum": ["critical", "high", "medium", "low", "never"],
+                        "description": (
+                            "Severity threshold that marks the cloud-uploaded scan as failed "
+                            "(default: ARGUS_FAIL_ON env var, else 'high')"
+                        ),
+                    },
+                },
+                "required": ["target"],
+            },
+        ),
+        types.Tool(
             name="scan_pci",
             description=(
                 "Scan source for PCI-DSS cardholder-data exposure heuristics: CVV/CVC stored "
@@ -760,6 +801,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextCont
             return await _handle_scan_ansible(arguments)
         elif name == "scan_ml":
             return await _handle_scan_ml(arguments)
+        elif name == "scan_mcp_config":
+            return await _handle_scan_mcp_config(arguments)
         elif name == "scan_malware":
             return await _handle_scan_malware(arguments)
         elif name == "scan_pci":
@@ -1095,6 +1138,24 @@ async def _handle_scan_malware(args: dict[str, Any]) -> list[types.TextContent]:
     return await _finish_scan(
         report,
         scan_type="malware",
+        timer=timer,
+        fmt=fmt,
+        fail_on=args.get("fail_on"),
+        include_raw_json=True,
+        target_path=target,
+    )
+
+
+async def _handle_scan_mcp_config(args: dict[str, Any]) -> list[types.TextContent]:
+    timer = ScanTimer()
+    target = args["target"]
+    fmt = args.get("format", "markdown")
+
+    result = await run_mcp_config_scan(target, include_global=args.get("include_global", False))
+    report = AggregatedReport(target=target, results=[result])
+    return await _finish_scan(
+        report,
+        scan_type="mcp-config",
         timer=timer,
         fmt=fmt,
         fail_on=args.get("fail_on"),

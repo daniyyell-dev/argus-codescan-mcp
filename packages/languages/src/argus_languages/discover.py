@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from argus_languages.mcp_config import MCP_CONFIG_FILES, MCP_CONFIG_NAMES
+
 SKIP_DIRS = {
     "node_modules", ".git", "dist", "build", ".next", "coverage", "vendor",
     "__pycache__", "target", "bin", "obj", ".venv", "venv", ".terraform",
@@ -119,6 +121,12 @@ def classify_file(path: Path, root: Path, content: str) -> LanguageId | None:
     rel = path.relative_to(root).as_posix()
     name = path.name.lower()
 
+    parent = path.parent.name.lower()
+    if name in MCP_CONFIG_NAMES or (
+        parent in MCP_CONFIG_FILES and name in MCP_CONFIG_FILES[parent]
+    ):
+        return "mcp-config"
+
     if _is_generated_dart(name):
         return None
 
@@ -169,6 +177,8 @@ def discover_files(target: Path) -> list[ScannedFile]:
     out: list[ScannedFile] = []
 
     def should_skip_dir(entry: Path, name: str) -> bool:
+        if name in MCP_CONFIG_FILES or name in MCP_CONFIG_NAMES:
+            return False
         if name in SKIP_DIRS:
             return True
         if name == ".github":
@@ -190,6 +200,9 @@ def discover_files(target: Path) -> list[ScannedFile]:
         for entry in entries:
             # Do not follow project symlinks: they can escape the scan root or
             # create cycles, and relative-path reporting assumes files stay inside it.
+            if (directory.name in MCP_CONFIG_FILES
+                    and entry.name not in MCP_CONFIG_FILES[directory.name]):
+                continue
             if entry.is_symlink():
                 continue
             if should_skip_dir(entry, entry.name):
@@ -227,7 +240,7 @@ def discover_files(target: Path) -> list[ScannedFile]:
 
 
 SUPPORTED_LANGUAGES = sorted(
-    set(EXT_MAP.values())
+    set(EXT_MAP.values()) | {"mcp-config"}
     | {
         "terraform",
         "ansible",

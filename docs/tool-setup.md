@@ -297,3 +297,7 @@ You'll see a table like:
 | `bandit` | SAST (Python) | ✅ Installed | — |
 | `trivy` | SCA / IaC / Container | ✅ Installed | — |
 | `gitleaks` | Secret Scanning | ❌ Not installed | `brew install gitleaks` |
+
+## MCP server configuration (built-in)
+
+`argus scan mcp-config PATH` requires no external scanner. Add `--global` only to include known user-level client configurations. See [MCP configuration checks](mcp-config.md).

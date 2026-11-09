@@ -196,6 +196,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common(malware_p)
 
+    mcp_config_p = scan_sub.add_parser("mcp-config", help="Inspect MCP server configuration")
+    _add_common(mcp_config_p)
+    mcp_config_p.add_argument(
+        "--global", dest="include_global", action="store_true",
+        help="Also inspect known user-level MCP client configuration files",
+    )
+
     pci_p = scan_sub.add_parser(
         "pci",
         help="PCI-DSS cardholder-data heuristics — CVV storage, PANs in logs, http:// card data (built-in)",
@@ -646,6 +653,11 @@ async def _dispatch_scan(
         from argus.tools.malware import run_malware_scan
 
         return [await run_malware_scan(target)]
+
+    if scan_type == "mcp-config":
+        from argus.tools.mcp_config import run_mcp_config_scan
+
+        return [await run_mcp_config_scan(target, include_global=args.include_global)]
 
     if scan_type == "pci":
         from argus.tools.pci import run_pci_scan

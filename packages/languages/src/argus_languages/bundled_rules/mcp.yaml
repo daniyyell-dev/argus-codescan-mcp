@@ -1,0 +1,37 @@
+# Structured checks in mcp_config.py; patterns are semantic markers, not raw JSON regexes.
+- id: mcp-unpinned-command
+  title: MCP server command uses an unpinned package or image
+  severity: medium
+  pattern: unpinned-command
+  languages: [mcp-source]
+  fix_guidance: Pin the reviewed package to an exact version or the image to a digest.
+
+- id: mcp-shell-download
+  title: MCP server invokes a shell with a download command
+  severity: high
+  pattern: shell-download
+  languages: [mcp-source]
+  fix_guidance: Replace downloaded shell commands with a reviewed pinned server executable.
+
+- id: mcp-inline-secret
+  title: MCP server configuration contains an inline credential
+  severity: high
+  pattern: inline-secret
+  languages: [mcp-source]
+  confidence: high
+  fix_guidance: Remove and rotate the credential; use an environment or input reference instead.
+
+- id: mcp-insecure-endpoint
+  title: MCP server URL uses plain HTTP or a raw IP address
+  severity: medium
+  pattern: insecure-endpoint
+  languages: [mcp-source]
+  fix_guidance: Review the endpoint and use HTTPS with a trusted hostname for remote servers.
+
+- id: mcp-lookalike-name
+  title: MCP server name resembles a known package
+  severity: low
+  pattern: lookalike-name
+  languages: [mcp-source]
+  confidence: low
+  fix_guidance: Verify the exact package name and publisher; similarity alone is not evidence of malware.
